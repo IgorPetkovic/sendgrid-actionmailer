@@ -39,6 +39,8 @@ module SendGridActionMailer
       settings[:return_response] ? response : self
     end
 
+    alias_method :deliver, :deliver!
+
     private
 
     def client
@@ -74,11 +76,16 @@ module SendGridActionMailer
       end
     end
 
+    def to_substitions(mail)
+      json_parse(mail['substitutions'].value)
+    end
+
     def to_personalizations(mail)
       Personalization.new.tap do |p|
         to_emails(mail.to).each { |to| p.add_to(to) }
         to_emails(mail.cc).each { |cc| p.add_cc(cc) }
         to_emails(mail.bcc).each { |bcc| p.add_bcc(bcc) }
+        to_substitions(mail).each { |sub| p.add_substitution(Substitution.new(key: sub.first, value: sub.second)) }
         p.add_substitution(Substitution.new(key: "%asm_group_unsubscribe_raw_url%", value: "<%asm_group_unsubscribe_raw_url%>"))
         p.add_substitution(Substitution.new(key: "%asm_global_unsubscribe_raw_url%", value: "<%asm_global_unsubscribe_raw_url%>"))
         p.add_substitution(Substitution.new(key: "%asm_preferences_raw_url%", value: "<%asm_preferences_raw_url%>"))
