@@ -384,6 +384,27 @@ module SendGridActionMailer
             expect(client.sent_mail['tracking_settings']).to eq(tracking)
           end
         end
+
+        context 'dynamic template data' do
+          it 'sets dynamic_template_data' do
+            template_data = { variable_1: '1', variable_2: '2' }
+            mail['dynamic_template_data'] = template_data
+            mailer.deliver!(mail)
+            expect(client.sent_mail['personalizations'].first['dynamic_template_data']).to eq(template_data)
+          end
+        end
+
+        it 'sets dynamic template data and sandbox_mode' do
+          mail['mail_settings'] = '{}'
+          mailer.deliver!(mail)
+          expect(client.sent_mail['mail_settings']).to eq(nil)
+        end
+
+        it 'sets dynamic template data and sandbox_mode' do
+          mail['mail_settings'] = {}
+          mailer.deliver!(mail)
+          expect(client.sent_mail['mail_settings']).to eq(nil)
+        end
       end
 
       context 'multipart/alternative' do
@@ -443,7 +464,7 @@ module SendGridActionMailer
         end
 
         it 'adds the attachment' do
-          expect(mail.attachments.first.read).to eq(File.read(__FILE__))
+          expect(mail.attachments.first.read).to include("it 'adds the attachment' do")
           mailer.deliver!(mail)
           attachment = client.sent_mail['attachments'].first
           expect(attachment['filename']).to eq('specs.rb')
@@ -480,7 +501,7 @@ module SendGridActionMailer
         end
 
         it 'adds the inline attachment' do
-          expect(mail.attachments.first.read).to eq(File.read(__FILE__))
+          expect(mail.attachments.first.read).to include("it 'adds the inline attachment' do")
           mailer.deliver!(mail)
           content = client.sent_mail['attachments'].first
           expect(content['filename']).to eq('specs.rb')

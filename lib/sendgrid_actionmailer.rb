@@ -23,7 +23,7 @@ module SendGridActionMailer
       sendgrid_mail = Mail.new.tap do |m|
         m.from = to_email(mail.from)
         m.reply_to = to_email(mail.reply_to)
-        m.subject = mail.subject
+        m.subject = mail.subject || ""
         # https://sendgrid.com/docs/Classroom/Send/v3_Mail_Send/personalizations.html
         m.add_personalization(to_personalizations(mail))
       end
@@ -86,9 +86,14 @@ module SendGridActionMailer
         to_emails(mail.cc).each { |cc| p.add_cc(cc) }
         to_emails(mail.bcc).each { |bcc| p.add_bcc(bcc) }
         to_substitions(mail).each { |sub| p.add_substitution(Substitution.new(key: sub.first, value: sub.second)) }
-        p.add_substitution(Substitution.new(key: "%asm_group_unsubscribe_raw_url%", value: "<%asm_group_unsubscribe_raw_url%>"))
-        p.add_substitution(Substitution.new(key: "%asm_global_unsubscribe_raw_url%", value: "<%asm_global_unsubscribe_raw_url%>"))
-        p.add_substitution(Substitution.new(key: "%asm_preferences_raw_url%", value: "<%asm_preferences_raw_url%>"))
+
+        if mail['dynamic_template_data']
+          p.add_dynamic_template_data(json_parse(mail['dynamic_template_data'].value))
+        elsif mail['template_id'].nil?
+          p.add_substitution(Substitution.new(key: "%asm_group_unsubscribe_raw_url%", value: "<%asm_group_unsubscribe_raw_url%>"))
+          p.add_substitution(Substitution.new(key: "%asm_global_unsubscribe_raw_url%", value: "<%asm_global_unsubscribe_raw_url%>"))
+          p.add_substitution(Substitution.new(key: "%asm_preferences_raw_url%", value: "<%asm_preferences_raw_url%>"))
+        end
       end
     end
 
@@ -137,7 +142,7 @@ module SendGridActionMailer
     end
 
     def json_parse(text, symbolize=true)
-      JSON.parse(text.gsub(/:*\"*([\%a-zA-Z0-9_-]*)\"*(( *)=>\ *)/) { "\"#{$1}\":" }, symbolize_names: symbolize)
+      JSON.parse(text.empty? ? '{}' : text.gsub(/:*\"*([\%a-zA-Z0-9_-]*)\"*(( *)=>\ *)/) { "\"#{$1}\":" }, symbolize_names: symbolize)
     end
 
     def add_send_options(sendgrid_mail, mail)

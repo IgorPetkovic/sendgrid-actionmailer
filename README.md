@@ -45,7 +45,7 @@ The Mail functionality is extended to include additional attributes provided by 
 [Sendgrid v3 API Documentation](https://sendgrid.com/docs/API_Reference/api_v3.html)
 
 ### template_id (string)
-The id of a template that you would like to use. If you use a template that contains a subject and content (either text or html), you do not need to specify those at the personalizations nor message level.
+The id of a template that you would like to use. If you use a template that contains a subject, you do not need to specify a subject at the personalizations nor message level. However, because of the way ActionMailer works, a body is required, even if the template contains one. If all your emails use templates with a body, you can add `default body: "not used"` to the top of your mailer.
 
 ```mail(to: 'example@email.com', subject: 'email subject', body: 'email body', template_id: 'template_1')```
 
@@ -215,6 +215,12 @@ The name of the campaign.
 
 ```mail(to: 'example@email.com', subject: 'email subject', body: 'email body',  tracking_settings:{ enable: true, utm_source: 'some source', utm_medium: 'some medium', utm_term: 'some term', utm_content: 'some content', utm_campaign: 'some campaign' }})```
 
+### dynamic_template_data (json)
+
+Data to provide for feeding the new dynamic templates in Sendgrid with valueable data. This also disables the following Unsubscribe links because of deprecation of substitutions in the new template implementaiton.
+
+```mail(to: 'example@email.com', subject: 'email subject', body: 'email body',  dynamic_template_data:{ variable_1: 'foo', variable_2: 'bar'})```
+
 ### Unsubscribe Links
 
 Sendgrid unfortunately uses <% %> for their default substitution syntax, which makes it incompatible with Rails templates. Their proposed solution is to use Personalization Substitutions with the v3 Mail Send Endpoint.  This gem makes that modification to make the following Rails friendly unsubscribe urls.
@@ -222,3 +228,5 @@ Sendgrid unfortunately uses <% %> for their default substitution syntax, which m
  * `<a href="%asm_group_unsubscribe_raw_url%">Unsubscribe</a>`
  * `<a href="%asm_global_unsubscribe_raw_url%">Unsubscribe from List</a>`
  * `<a href="%asm_preferences_raw_url%">Manage Email Preferences</a>`
+
+Note: This feature, and substitutions in general, do not work in combination with dynamic templates.
